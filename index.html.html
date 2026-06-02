@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数独游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            max-width: 520px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #302b63;
+            margin-bottom: 10px;
+            font-size: 2em;
+            letter-spacing: 2px;
+        }
+
+        .difficulty-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .diff-btn {
+            padding: 8px 20px;
+            border: 2px solid #302b63;
+            background: transparent;
+            color: #302b63;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .diff-btn:hover {
+            background: rgba(48, 43, 99, 0.1);
+        }
+
+        .diff-btn.active {
+            background: #302b63;
+            color: white;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 1px;
+            background: #302b63;
+            border: 3px solid #302b63;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 0 auto;
+            max-width: 450px;
+            aspect-ratio: 1;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            cursor: pointer;
+            background: white;
+            transition: background 0.2s;
+            user-select: none;
+            position: relative;
+        }
+
+        .cell:hover {
+            background: #e8e6f5;
+        }
+
+        .cell.selected {
+            background: #c4b5fd;
+            box-shadow: inset 0 0 0 3px #7c3aed;
+        }
+
+        .cell.same-number {
+            background: #ddd6fe;
+        }
+
+        .cell.same-row-col {
+            background: #f3f0ff;
+        }
+
+        .cell.given {
+            color: #1e1b4b;
+        }
+
+        .cell.user-input {
+            color: #7c3aed;
+        }
+
+        .cell.error {
+            color: #dc2626;
+            background: #fee2e2 !important;
+        }
+
+        .cell.hint {
+            color: #059669;
+            font-weight: 700;
+        }
+
+        /* 3x3 宫格加粗边框 */
+        .cell:nth-child(3n) {
+            border-right: 2px solid #302b63;
+        }
+        .cell:nth-child(9n) {
+            border-right: none;
+        }
+        .cell:nth-child(n+19):nth-child(-n+27),
+        .cell:nth-child(n+46):nth-child(-n+54) {
+            border-bottom: 2px solid #302b63;
+        }
+
+        .number-pad {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .num-btn {
+            width: 42px;
+            height: 42px;
+            border: 2px solid #302b63;
+            background: white;
+            color: #302b63;
+            border-radius: 50%;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .num-btn:hover {
+            background: #302b63;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .num-btn:active {
+            transform: scale(0.95);
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-erase {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-hint {
+            background: #f59e0b;
+            color: white;
+        }
+        .btn-new {
+            background: #302b63;
+            color: white;
+        }
+        .btn-check {
+            background: #059669;
+            color: white;
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 18px;
+            color: #6b7280;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .message {
+            text-align: center;
+            min-height: 24px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .message.success {
+            color: #059669;
+        }
+        .message.info {
+            color: #6366f1;
+        }
+        .message.error-msg {
+            color: #dc2626;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            .cell {
+                font-size: 16px;
+            }
+            .num-btn {
+                width: 34px;
+                height: 34px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧩 数独</h1>
+
+        <div class="difficulty-selector">
+            <button class="diff-btn active" data-diff="easy">简单</button>
+            <button class="diff-btn" data-diff="medium">中等</button>
+            <button class="diff-btn" data-diff="hard">困难</button>
+            <button class="diff-btn" data-diff="expert">专家</button>
+        </div>
+
+        <div class="timer" id="timer">⏱ 00:00</div>
+
+        <div class="board" id="board"></div>
+
+        <div class="number-pad" id="numberPad"></div>
+
+        <div class="action-buttons">
+            <button class="action-btn btn-erase" id="btnErase">🗑 擦除</button>
+            <button class="action-btn btn-hint" id="btnHint">💡 提示</button>
+            <button class="action-btn btn-check" id="btnCheck">✅ 检查</button>
+            <button class="action-btn btn-new" id="btnNew">🔄 新游戏</button>
+        </div>
+
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        (function () {
+            const SIZE = 9;
+            let board = [];
+            let solution = [];
+            let givenMask = [];
+            let hintMask = [];
+            let selectedRow = -1;
+            let selectedCol = -1;
+            let difficulty = 'easy';
+            let timerInterval = null;
+            let seconds = 0;
+
+            const boardEl = document.getElementById('board');
+            const numberPadEl = document.getElementById('numberPad');
+            const timerEl = document.getElementById('timer');
+            const messageEl = document.getElementById('message');
+
+            // ============ 数独求解器 ============
+            function isValid(boardArr, row, col, num) {
+                for (let i = 0; i < SIZE; i++) {
+                    if (boardArr[row][i] === num) return false;
+                    if (boardArr[i][col] === num) return false;
+                }
+                const boxRow = Math.floor(row / 3) * 3;
+                const boxCol = Math.floor(col / 3) * 3;
+                for (let r = boxRow; r < boxRow + 3; r++) {
+                    for (let c = boxCol; c < boxCol + 3; c++) {
+                        if (boardArr[r][c] === num) return false;
+                    }
+                }
+                return true;
+            }
+
+            function solve(boardArr) {
+                for (let r = 0; r < SIZE; r++) {
+                    for (let c = 0; c < SIZE; c++) {
+                        if (boardArr[r][c] === 0) {
+                            const nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+                            for (const num of nums) {
+                                if (isValid(boardArr, r, c, num)) {
+                                    boardArr[r][c] = num;
+                                    if (solve(boardArr)) return true;
+                                    boardArr[r][c] = 0;
+                                }
+                            }
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+
+            function shuffle(arr) {
+                const a = [...arr];
+                for (let i = a.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [a[i], a[j]] = [a[j], a[i]];
+                }
+                return a;
+            }
+
+            function deepCopy(arr) {
+                return arr.map(row => [...row]);
+            }
+
+            // ============ 生成完整终盘 ============
+            function generateFullBoard() {
+                const b = Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+                const firstRow = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+                b[0] = firstRow;
+                solve(b);
+                return b;
+            }
+
+            // ============ 根据难度挖空 ============
+            function getEmptyCount(diff) {
+                switch (diff) {
+                    case 'easy': return 36;
+                    case 'medium': return 46;
+                    case 'hard': return 52;
+                    case 'expert': return 58;
+                    default: return 36;
+                }
+            }
+
+            function createPuzzle(fullBoard, diff) {
+                const puzzle = deepCopy(fullBoard);
+                const mask = Array.from({ length: SIZE }, () => Array(SIZE).fill(false));
+                const targetEmpty = getEmptyCount(diff);
+                const positions = [];
+                for (let r = 0; r < SIZE; r++) {
+                    for (let c = 0; c < SIZE; c++) {
+                        positions.push([r, c]);
+                    }
+                }
+                for (let i = positions.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [positions[i], positions[j]] = [positions[j], positions[i]];
+                }
+
+                let removed = 0;
+                for (const [r, c] of positions) {
+                    if (removed >= targetEmpty) break;
+                    puzzle[r][c] = 0;
+                    removed++;
+                }
+
+                for (let r = 0; r < SIZE; r++) {
+                    for (let c = 0; c < SIZE; c++) {
+                        mask[r][c] = puzzle[r][c] !== 0;
+                    }
+                }
+
+                return { puzzle, mask };
+            }
+
+            // ============ 新游戏 ============
+            function newGame(diff) {
+                difficulty = diff || difficulty;
+                stopTimer();
+                seconds = 0;
+                updateTimer();
+
+                const full = generateFullBoard();
+                solution = full;
+                const { puzzle, mask } = createPuzzle(full, difficulty);
+                board = puzzle;
+                givenMask = mask;
+                hintMask = Array.from({ length: SIZE }, () => Array(SIZE).fill(false));
+                selectedRow = -1;
+                selectedCol = -1;
+                messageEl.textContent = '';
+                messageEl.className = 'message';
+
+                renderBoard();
+                renderNumberPad();
+                startTimer();
+            }
+
+            // ============ 计时器 ============
+            function startTimer() {
+                stopTimer();
+                timerInterval = setInterval(() => {
+                    seconds++;
+                    updateTimer();
+                }, 1000);
+            }
+
+            function stopTimer() {
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+            }
+
+            function updateTimer() {
+                const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const s = (seconds % 60).toString().padStart(2, '0');
+                timerEl.textContent = `⏱ ${m}:${s}`;
+            }
+
+            // ============ 渲染 ============
+            function renderBoard() {
+                boardEl.innerHTML = '';
+                for (let r = 0; r < SIZE; r++) {
+                    for (let c = 0; c < SIZE; c++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.row = r;
+                        cell.dataset.col = c;
+
+                        if (board[r][c] !== 0) {
+                            cell.textContent = board[r][c];
+                            if (givenMask[r][c]) {
+                                cell.classList.add('given');
+                            } else if (hintMask[r][c]) {
+                                cell.classList.add('hint');
+                            } else {
+                                cell.classList.add('user-input');
+                            }
+                        }
+
+                        if (r === selectedRow && c === selectedCol) {
+                            cell.classList.add('selected');
+                        } else if (selectedRow >= 0 && selectedCol >= 0) {
+                            if (r === selectedRow || c === selectedCol ||
+                                (Math.floor(r / 3) === Math.floor(selectedRow / 3) &&
+                                    Math.floor(c / 3) === Math.floor(selectedCol / 3))) {
+                                cell.classList.add('same-row-col');
+                            }
+                            if (board[r][c] !== 0 && board[r][c] === board[selectedRow][selectedCol] && board[selectedRow][selectedCol] !== 0) {
+                                cell.classList.add('same-number');
+                            }
+                        }
+
+                        if (!givenMask[r][c] && !hintMask[r][c] && board[r][c] !== 0 && board[r][c] !== solution[r][c]) {
+                            cell.classList.add('error');
+                        }
+
+                        cell.addEventListener('click', () => selectCell(r, c));
+                        boardEl.appendChild(cell);
+                    }
+                }
+            }
+
+            function renderNumberPad() {
+                numberPadEl.innerHTML = '';
+                for (let n = 1; n <= 9; n++) {
+                    const btn = document.createElement('button');
+                    btn.className = 'num-btn';
+                    btn.textContent = n;
+                    btn.addEventListener('click', () => placeNumber(n));
+                    numberPadEl.appendChild(btn);
+                }
+            }
+
+            // ============ 交互 ============
+            function selectCell(r, c) {
+                selectedRow = r;
+                selectedCol = c;
+                renderBoard();
+            }
+
+            function placeNumber(num) {
+                if (selectedRow < 0 || selectedCol < 0) return;
+                if (givenMask[selectedRow][selectedCol] || hintMask[selectedRow][selectedCol]) return;
+
+                board[selectedRow][selectedCol] = num;
+                hintMask[selectedRow][selectedCol] = false;
+                renderBoard();
+
+                if (checkComplete()) {
+                    stopTimer();
+                    messageEl.textContent = `🎉 恭喜！你完成了数独！用时 ${formatTime()}`;
+                    messageEl.className = 'message success';
+                }
+            }
+
+            function eraseCell() {
+                if (selectedRow < 0 || selectedCol < 0) return;
+                if (givenMask[selectedRow][selectedCol]) return;
+
+                board[selectedRow][selectedCol] = 0;
+                hintMask[selectedRow][selectedCol] = false;
+                renderBoard();
+            }
+
+            function giveHint() {
+                const candidates = [];
+                for (let r = 0; r < SIZE; r++) {
+                    for (let c = 0; c < SIZE; c++) {
+                        if (!givenMask[r][c] && board[r][c] !== solution[r][c]) {
+                            candidates.push([r, c]);
+                        }
+                    }
+                }
+                if (candidates.length === 0) return;
+
+                const [r, c] = candidates[Math.floor(Math.random() * candidates.length)];
+                board[r][c] = solution[r][c];
+                hintMask[r][c] = true;
+                selectedRow = r;
+                selectedCol = c;
+                renderBoard();
+
+                if (checkComplete()) {
+                    stopTimer();
+                    messageEl.textContent = `🎉 恭喜！你完成了数独！用时 ${formatTime()}`;
+                    messageEl.className = 'message success';
+                }
+            }
+
+            function checkSolution() {
+                let hasError = false;
+                for (let r = 0; r < SIZE; r++) {
+                    for (let c = 0; c < SIZE; c++) {
+                        if (board[r][c] !== 0 && board[r][c] !== solution[r][c]) {
+                            hasError = true;
+                        }
+                    }
+                }
+                if (hasError) {
+                    messageEl.textContent = '❌ 存在错误，请检查红色标记的格子';
+                    messageEl.className = 'message error-msg';
+                } else {
+                    const filled = board.flat().filter(v => v !== 0).length;
+                    messageEl.textContent = `✅ 当前填入的 ${filled} 个数字全部正确！`;
+                    messageEl.className = 'message success';
+                }
+                renderBoard();
+            }
+
+            function checkComplete() {
+                for (let r = 0; r < SIZE; r++) {
+                    for (let c = 0; c < SIZE; c++) {
+                        if (board[r][c] !== solution[r][c]) return false;
+                    }
+                }
+                return true;
+            }
+
+            function formatTime() {
+                const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const s = (seconds % 60).toString().padStart(2, '0');
+                return `${m}:${s}`;
+            }
+
+            // ============ 键盘支持 ============
+            document.addEventListener('keydown', (e) => {
+                const key = e.key;
+                if (key >= '1' && key <= '9') {
+                    placeNumber(parseInt(key));
+                } else if (key === 'Backspace' || key === 'Delete' || key === '0') {
+                    eraseCell();
+                } else if (key === 'ArrowUp' && selectedRow > 0) {
+                    selectCell(selectedRow - 1, selectedCol);
+                } else if (key === 'ArrowDown' && selectedRow < SIZE - 1) {
+                    selectCell(selectedRow + 1, selectedCol);
+                } else if (key === 'ArrowLeft' && selectedCol > 0) {
+                    selectCell(selectedRow, selectedCol - 1);
+                } else if (key === 'ArrowRight' && selectedCol < SIZE - 1) {
+                    selectCell(selectedRow, selectedCol + 1);
+                }
+            });
+
+            // ============ 按钮事件 ============
+            document.getElementById('btnErase').addEventListener('click', eraseCell);
+            document.getElementById('btnHint').addEventListener('click', giveHint);
+            document.getElementById('btnCheck').addEventListener('click', checkSolution);
+            document.getElementById('btnNew').addEventListener('click', () => newGame());
+
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    newGame(this.dataset.diff);
+                });
+            });
+
+            // ============ 启动 ============
+            newGame('easy');
+        })();
+    </script>
+</body>
+</html>
